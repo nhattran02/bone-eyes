@@ -1,0 +1,79 @@
+SUMMARY = "Lightweight and flexible command-line JSON processor"
+DESCRIPTION = "jq is like sed for JSON data, you can use it to slice and \
+               filter and map and transform structured data with the same \
+               ease that sed, awk, grep and friends let you play with text."
+HOMEPAGE = "https://jqlang.github.io/jq/"
+BUGTRACKER = "https://github.com/jqlang/jq/issues"
+SECTION = "utils"
+LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://COPYING;md5=488f4e0b04c0456337fb70d1ac1758ba"
+
+GITHUB_BASE_URI = "https://github.com/jqlang/${BPN}/releases/"
+SRC_URI = "${GITHUB_BASE_URI}/download/${BPN}-${PV}/${BPN}-${PV}.tar.gz \
+    file://run-ptest \
+    file://CVE-2024-23337.patch \
+    file://CVE-2024-53427.patch \
+    file://CVE-2025-48060.patch \
+    file://CVE-2025-9403.patch \
+    file://CVE-2026-40164.patch \
+    file://CVE-2026-32316.patch \
+    file://CVE-2026-33947.patch \
+    file://CVE-2026-33948.patch \
+    file://CVE-2026-39979.patch \
+    file://CVE-2026-40612.patch \
+    file://CVE-2026-41256.patch \
+    file://CVE-2026-41257.patch \
+    file://CVE-2026-43894.patch \
+    file://CVE-2026-43896.patch \
+    file://CVE-2026-43895.patch \
+    file://CVE-2026-47770.patch \
+    file://CVE-2026-49839.patch \
+    file://CVE-2026-54679.patch \
+    file://CVE-2026-39956.patch \
+    file://CVE-2026-44777.patch \
+    "
+SRC_URI[sha256sum] = "478c9ca129fd2e3443fe27314b455e211e0d8c60bc8ff7df703873deeee580c2"
+
+inherit autotools github-releases ptest
+
+UPSTREAM_CHECK_REGEX = "releases/tag/${BPN}-(?P<pver>\d+(\.\d+)+)"
+
+PACKAGECONFIG ?= "oniguruma"
+
+PACKAGECONFIG[docs] = "--enable-docs,--disable-docs,ruby-native"
+PACKAGECONFIG[maintainer-mode] = "--enable-maintainer-mode,--disable-maintainer-mode,flex-native bison-native"
+PACKAGECONFIG[oniguruma] = "--with-oniguruma,--without-oniguruma,onig"
+# enable if you want ptest running under valgrind
+PACKAGECONFIG[valgrind] = "--enable-valgrind,--disable-valgrind,valgrind"
+
+# Gets going with gcc-15 but See if it can be removed with next upgrade
+CFLAGS:append = " -std=gnu17"
+
+# The release tarball ships the bison/flex generated sources and maintainer
+# mode is disabled by default, so make(1) must never consider them outdated.
+# Patches touching src/parser.y (or src/lexer.l) make the shipped src/parser.c
+# look stale, which fires the "NOT building parser.c!" no-op rule. From then on
+# make looks for the file in ${B} instead of resolving it via VPATH and the
+# build fails with "cc1: fatal error: src/parser.c: No such file or directory".
+do_configure:prepend() {
+	touch ${S}/src/parser.c ${S}/src/parser.h ${S}/src/lexer.c ${S}/src/lexer.h
+}
+
+do_configure:append() {
+	sed -i -e "/^ac_cs_config=/ s:${WORKDIR}::g" ${B}/config.status
+}
+
+do_install_ptest() {
+    cp -rf ${S}/tests ${D}${PTEST_PATH}
+    cp -rf ${B}/.libs ${D}${PTEST_PATH}
+    # libjq.so.* is packaged in the main jq component, so remove it from ptest
+    rm -f ${D}${PTEST_PATH}/.libs/libjq.so.*
+    ln -sf ${bindir}/jq ${D}${PTEST_PATH}
+    if [ "${@bb.utils.contains('PACKAGECONFIG', 'valgrind', 'true', 'false', d)}" = "false" ]; then
+        sed -i 's:#export NO_VALGRIND=1:export NO_VALGRIND=1:g' ${D}${PTEST_PATH}/run-ptest
+    fi
+    # handle multilib
+    sed -i s:@libdir@:${libdir}:g ${D}${PTEST_PATH}/run-ptest
+}
+
+BBCLASSEXTEND = "native"

@@ -1,0 +1,29 @@
+DESCRIPTION = "Google gRPC tools"
+HOMEPAGE = "http://www.grpc.io/"
+SECTION = "devel/python"
+
+LICENSE = "Apache-2.0"
+LIC_FILES_CHKSUM = "file://PKG-INFO;beginline=8;endline=8;md5=7145f7cdd263359b62d342a02f005515"
+
+inherit pypi setuptools3
+
+DEPENDS += "python3-grpcio"
+
+SRC_URI += "file://0001-setup.py-Do-not-mix-C-and-C-compiler-options.patch \
+            file://0001-protobuf-Disable-musttail-attribute-on-mips.patch \
+            "
+SRC_URI[sha256sum] = "5fd5e1582b678e6b941ee5f5809340be5e0724691df5299aae8226640f94e18f"
+
+RDEPENDS:${PN} = "python3-grpcio"
+
+do_compile:prepend() {
+    export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS="${@oe.utils.parallel_make(d, False)}"
+}
+
+BBCLASSEXTEND = "native nativesdk"
+
+CVE_PRODUCT += "grpc:grpc"
+
+CVE_STATUS[CVE-2026-33186] = "cpe-incorrect: this CVE is for golang version of grpc"
+CVE_STATUS[CVE-2024-7246] = "not-applicable-config: the vulnerable gRPC C-core HPACK parser code is not present in grpcio-tools"
+CVE_STATUS[CVE-2024-11407] = "not-applicable-config: CVE affects gRPC C++ server zero-copy transport code, which is not present in grpcio-tools"
