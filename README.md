@@ -1,7 +1,7 @@
 # bone-eyes
 A camera on BeagleBone Black
 
-<img width="2720" height="2960" alt="bbb_ov7670_st7789_block_diagram" src="https://github.com/user-attachments/assets/b017d7b8-b8dd-4b9f-9dee-737b240a45a6" />
+<img width="1202" height="1308" alt="image" src="https://github.com/user-attachments/assets/1c1424c4-29e7-4fd4-bdd3-1d600f4ca24a" />
 
 <p align="center">
   <img width="49%" src="https://github.com/user-attachments/assets/5f031be9-a47d-4e9d-9b70-4db6b41875c5" />
